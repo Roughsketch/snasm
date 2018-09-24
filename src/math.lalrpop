@@ -1,0 +1,35 @@
+use std::str::FromStr;
+use ast::*;
+
+grammar;
+
+pub Expr: i32 = {
+    <l:Expr> "+" <r:Factor> => l + r,
+    <l:Expr> "-" <r:Factor> => l - r,
+    Factor,
+};
+
+Factor: i32 = {
+    <l:Factor> "*" <r:Exp> => l * r,
+    <l:Factor> "/" <r:Exp> => l / r,
+    Exp,
+};
+
+Exp: i32 = {
+    <l:Exp> "^" <r:Term> => {
+        assert!(r <= i32::max_value());
+        l.pow(r as u32)
+    },
+    Term,
+}
+
+Term: i32 = {
+    Num,
+    "(" <Expr> ")",
+};
+
+Num: i32 = {
+    r"(-?)[0-9]+" => i32::from_str(<>).unwrap(),
+    r"\$[0-9a-fA-F]+" => i32::from_str_radix(&<>[1..], 16).unwrap(),
+    r"%[01]+" => i32::from_str_radix(&<>[1..], 2).unwrap(),
+};
