@@ -1,12 +1,54 @@
 use std::str::FromStr;
-use ast::*;
+use crate::ast::*;
+use lalrpop_util::ErrorRecovery;
 
 grammar;
 
-pub Expr: i32 = {
-    <l:Expr> "+" <r:Factor> => l + r,
-    <l:Expr> "-" <r:Factor> => l - r,
-    Factor,
+pub Program: Vec<Expr> = {
+    <Expr+> => <>,
+}
+
+pub Expr: Expr = {
+    <Label> => Expr::Label(<>),
+    Instruction,
+}
+
+Instruction: Expr = {
+    r"(?i)ADC" <arg:ArgType?> => Expr::Opcode("ADC".to_string(), arg),
+    r"(?i)AND" <arg:ArgType> => Expr::Opcode("AND".to_string(), arg),
+    r"(?i)ASL" <arg:ArgType> => Expr::Opcode("ASL".to_string(), arg),
+}
+
+Label: String = {
+    <Identifier> ":" => {
+        println!("Label: {}", <>);
+        <>.to_string()
+    },
+}
+
+Identifier: String = {
+    r"[a-z][a-zA-Z0-9_]*" => {
+        println!("Identifier: {}", <>);
+        <>.to_string()
+    },
+}
+
+ArgType: ArgType = {
+    Arg => ArgType::
+}
+
+Arg: Arg = {
+    <Math> => Arg::Number(<>),
+    <Identifier> => {
+        println!("Arg ident");
+        Arg::Identifier(<>.to_string())
+    }
+}
+
+Math: i32 = {
+    <l:Math> "+" <r:Factor> => l + r,
+    <l:Math> "-" <r:Factor> => l - r,
+    Factor => <>,
 };
 
 Factor: i32 = {
@@ -25,7 +67,7 @@ Exp: i32 = {
 
 Term: i32 = {
     Num,
-    "(" <Expr> ")",
+    "(" <Math> ")",
 };
 
 Num: i32 = {
